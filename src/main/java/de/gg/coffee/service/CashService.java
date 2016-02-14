@@ -6,6 +6,8 @@ import de.gg.coffee.util.AppProperties;
 import de.gg.coffee.util.Logger;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -14,8 +16,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class CashService extends Thread {
     private static Logger log = Logger.getLogger(CashService.class);
     private final ICashRegister cashRegister;
-
-    private final BlockingQueue<IProgrammer> programmersToPay = new LinkedBlockingQueue<>(Integer.valueOf(AppProperties.get("programmers.topay")));
+    private final static int TO_PAY_SIZE = Integer.valueOf(AppProperties.get("programmers.topay"));
+    private final BlockingQueue<IProgrammer> programmersToPay = new LinkedBlockingQueue<>(TO_PAY_SIZE);
 
     public CashService(ICashRegister cashRegister) {
         this.cashRegister = cashRegister;
@@ -27,17 +29,25 @@ public class CashService extends Thread {
 
     @Override
     public void run() {
+        ExecutorService service = Executors.newFixedThreadPool(TO_PAY_SIZE);
         try {
             log.info("CashService is about to start...");
             while (ContextRegistry.LATCH.getCount() > 0) {
-                IProgrammer programmer = programmersToPay.take();
-
-                programmer.payCoffee(cashRegister);
-                CoffeeService coffeeService = programmer.findMachine();
-                coffeeService.getProgrammersToGet().put(programmer);
+                IProgrammer programmer = programmersToPay.take(); // can avoid this approach at all
+                service.execute(() -> {
+                    programmer.payCoffee(cashRegister);
+                    CoffeeService coffeeService = programmer.findMachine();
+                    try {
+                        coffeeService.getProgrammersToGet().put(programmer);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
         } catch (InterruptedException e) {
             log.info("Interrupting thread...");
+        } finally {
+            service.shutdown();
         }
     }
 }

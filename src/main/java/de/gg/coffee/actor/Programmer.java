@@ -13,16 +13,10 @@ import java.util.*;
 public class Programmer implements IProgrammer {
     private static Logger log = Logger.getLogger(Programmer.class);
 
-//    todo: flyweight
-//    private static Map<CoffeeMachine, List<CoffeeMachine.CoffeeType>>
 
     static final Random RANDOM = new Random();
 
     private CoffeeMachine.CoffeeType currentlyPreferredType;
-
-    public CoffeeMachine.CoffeeType getCurrentlyPreferredType() {
-        return currentlyPreferredType;
-    }
 
     @Override
     public void gatherInfo() {
@@ -55,6 +49,7 @@ public class Programmer implements IProgrammer {
         }
         CashRegister.PaymentType type = CashRegister.PaymentType.values()[RANDOM.nextInt(CashRegister.PaymentType.values().length)];
 
+        log.info("{} is going to pay using {}", this, type);
         if (type == CashRegister.PaymentType.card) {
             cashRegister.payCard();
         } else {

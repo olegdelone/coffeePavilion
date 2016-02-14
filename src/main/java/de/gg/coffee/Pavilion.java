@@ -4,6 +4,7 @@ import de.gg.coffee.actor.IProgrammer;
 import de.gg.coffee.actor.proxied.IStat;
 import de.gg.coffee.service.CoffeeService;
 import de.gg.coffee.service.ContextRegistry;
+import de.gg.coffee.util.AppProperties;
 import de.gg.coffee.util.Logger;
 
 import java.util.concurrent.ExecutorService;
@@ -22,7 +23,7 @@ public class Pavilion {
             coffeeService.start();
         }
 
-        ExecutorService service = Executors.newFixedThreadPool(10);
+        ExecutorService service = Executors.newFixedThreadPool(Integer.valueOf(AppProperties.get("programmers.topick")));
         for (final IProgrammer IProgrammer : ContextRegistry.getProgrammers()) {
             service.submit((Runnable) () -> {
                 IProgrammer.gatherInfo();
